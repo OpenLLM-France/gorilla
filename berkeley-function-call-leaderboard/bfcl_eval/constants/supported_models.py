@@ -137,6 +137,7 @@ SUPPORTED_MODELS = [
     "MadeAgents/Hammer2.1-1.5b",
     "MadeAgents/Hammer2.1-0.5b",
     "THUDM/glm-4-9b-chat",
+    "OpenLLM-France/Luciole-1B-FC",
     "Qwen/Qwen3-0.6B-FC",
     "Qwen/Qwen3-0.6B",
     "Qwen/Qwen3-1.7B-FC",

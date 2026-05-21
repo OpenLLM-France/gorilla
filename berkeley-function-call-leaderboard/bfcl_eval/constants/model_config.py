@@ -52,6 +52,7 @@ from bfcl_eval.model_handler.local_inference.llama_3_1 import LlamaHandler_3_1
 from bfcl_eval.model_handler.local_inference.minicpm import MiniCPMHandler
 from bfcl_eval.model_handler.local_inference.minicpm_fc import MiniCPMFCHandler
 from bfcl_eval.model_handler.local_inference.mistral_fc import MistralFCHandler
+from bfcl_eval.model_handler.local_inference.luciole_fc import LucioleFCHandler
 from bfcl_eval.model_handler.local_inference.phi import PhiHandler
 from bfcl_eval.model_handler.local_inference.phi_fc import PhiFCHandler
 from bfcl_eval.model_handler.local_inference.quick_testing_oss import (
@@ -1604,6 +1605,18 @@ local_inference_model_map = {
         org="THUDM",
         license="glm-4",
         model_handler=GLMHandler,
+        input_price=None,
+        output_price=None,
+        is_fc_model=True,
+        underscore_to_dot=True,
+    ),
+    "OpenLLM-France/Luciole-1B-FC": ModelConfig(
+        model_name="OpenLLM-France/Luciole-1B",
+        display_name="Luciole-1B (FC)",
+        url="https://huggingface.co/OpenLLM-France/Luciole-1B",
+        org="OpenLLM-France",
+        license="",
+        model_handler=LucioleFCHandler,
         input_price=None,
         output_price=None,
         is_fc_model=True,
