@@ -1,10 +1,11 @@
-"""Plot BFCL leaderboard CSVs for a subset of 1B-class models.
+"""Plot BFCL leaderboard CSVs for a subset of models of a chosen size class.
 
 Reads each data_*.csv in the default score directory (and optionally a second
 one passed on the CLI), merges their rows, keeps only the rows whose Model is
-in MODELS, and writes one PNG per CSV (named <csv_stem>.png).
+in the chosen size list (1B or 8B), and writes one PNG per CSV (named
+<csv_stem>.png).
 
-Usage: python plot_results.py [score_dir]
+Usage: python plot_results.py [score_dir] [--size {1b,8b}]
   score_dir is a second score directory to merge with the default one.
   Absolute paths are used as-is; relative paths resolve against bfcl_results/.
 """
@@ -22,8 +23,8 @@ DEFAULT_DIR = Path(__file__).parent / "2025-12-16" / "score"
 
 SKIP_CSVS = {"data_format_sensitivity.csv"}
 
-# 1B-class models to plot. Names must match the "Model" column verbatim.
-MODELS = [
+# Per size-class shortlists. Names must match the "Model" column verbatim.
+MODELS_1B = [
     "Arch-Agent-1.5B",
     "Falcon3-1B-Instruct (FC)",
     "Gemma-3-1b-it (Prompt)",
@@ -32,6 +33,18 @@ MODELS = [
     "Qwen3-1.7B (FC)",
     "xLAM-2-1b-fc-r (FC)",
 ]
+
+MODELS_8B = [
+    "BitAgent-Bounty-8B",
+    "Falcon3-7B-Instruct (FC)",
+    "Hammer2.1-7b (FC)",
+    "Llama-3.1-8B-Instruct (Prompt)",
+    "Qwen3-8B (FC)",
+    "ToolACE-2-8B (FC)",
+    "xLAM-2-8b-fc-r (FC)",
+]
+
+MODEL_GROUPS = {"1b": MODELS_1B, "8b": MODELS_8B}
 
 # Columns to ignore when picking which columns to plot — non-score metadata
 # plus "AST Summary", which duplicates the Live/Non-Live Overall Acc column in
@@ -62,8 +75,9 @@ def to_float(x):
     return x
 
 
-def load_merged(csv_name: str, dirs: list[tuple[Path, str]]) -> pd.DataFrame:
-    """Read csv_name from each dir; baseline is filtered to MODELS, secondary
+def load_merged(csv_name: str, dirs: list[tuple[Path, str]],
+                models: list[str]) -> pd.DataFrame:
+    """Read csv_name from each dir; baseline is filtered to `models`, secondary
     dirs (any with a non-empty suffix) keep every row and get their Model
     tagged with ":<suffix>"."""
     frames = []
@@ -75,18 +89,18 @@ def load_merged(csv_name: str, dirs: list[tuple[Path, str]]) -> pd.DataFrame:
         if suffix:
             df["Model"] = df["Model"].astype(str) + f":{suffix}"
         else:
-            df = df[df["Model"].isin(MODELS)].copy()
+            df = df[df["Model"].isin(models)].copy()
         frames.append(df)
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
 
-def order_models(df: pd.DataFrame) -> list[str]:
+def order_models(df: pd.DataFrame, models: list[str]) -> list[str]:
     """Group each baseline model with its suffixed variants, then append any
-    extra secondary-dir models not derived from MODELS."""
+    extra secondary-dir models not derived from `models`."""
     present = list(df["Model"].astype(str))
     seen: set[str] = set()
     ordered: list[str] = []
-    for m in MODELS:
+    for m in models:
         for x in present:
             if (x == m or x.startswith(m + ":")) and x not in seen:
                 ordered.append(x)
@@ -98,11 +112,12 @@ def order_models(df: pd.DataFrame) -> list[str]:
     return ordered
 
 
-def plot_csv(df: pd.DataFrame, csv_name: str, output: Path) -> None:
+def plot_csv(df: pd.DataFrame, csv_name: str, output: Path,
+             models: list[str], size_label: str) -> None:
     if df.empty:
         print(f"skip {csv_name}: no rows")
         return
-    model_order = order_models(df)
+    model_order = order_models(df, models)
 
     value_cols = [c for c in df.columns if c not in META_COLS]
     for c in value_cols:
@@ -119,7 +134,7 @@ def plot_csv(df: pd.DataFrame, csv_name: str, output: Path) -> None:
     fig, axes = plt.subplots(n_rows, 1,
                              figsize=(fig_width, 4.5 * n_rows + 1.5),
                              squeeze=False)
-    fig.suptitle(f"{Path(csv_name).stem} — 1B-class models")
+    fig.suptitle(f"{Path(csv_name).stem} — {size_label} models")
 
     legend_handles = None
     legend_labels = None
@@ -178,7 +193,16 @@ def main() -> None:
         type=resolve_score_dir,
         help="extra score dir to merge with the default; absolute or relative to bfcl_results/",
     )
+    parser.add_argument(
+        "--size",
+        choices=sorted(MODEL_GROUPS),
+        default="1b",
+        help="which size class to compare (default: 1b)",
+    )
     args = parser.parse_args()
+
+    models = MODEL_GROUPS[args.size]
+    size_label = f"{args.size.upper()}-class"
 
     dirs: list[tuple[Path, str]] = [(DEFAULT_DIR, "")]
     if args.score_dir is not None:
@@ -190,10 +214,11 @@ def main() -> None:
 
     csv_names = sorted({p.name for d, _ in dirs for p in d.glob("*.csv")} - SKIP_CSVS)
     for name in csv_names:
-        df = load_merged(name, dirs)
+        df = load_merged(name, dirs, models)
         if df.empty:
             continue
-        plot_csv(df, name, output_dir / (Path(name).stem + ".png"))
+        plot_csv(df, name, output_dir / (Path(name).stem + ".png"),
+                 models, size_label)
 
 
 if __name__ == "__main__":
