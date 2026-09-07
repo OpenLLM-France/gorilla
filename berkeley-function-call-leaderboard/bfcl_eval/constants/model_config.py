@@ -1610,10 +1610,10 @@ local_inference_model_map = {
         is_fc_model=True,
         underscore_to_dot=True,
     ),
-    "OpenLLM-France/Luciole-1B-FC": ModelConfig(
-        model_name="OpenLLM-France/Luciole-1B",
-        display_name="Luciole-1B (FC)",
-        url="https://huggingface.co/OpenLLM-France/Luciole-1B",
+    "OpenLLM-France/Luciole-FC": ModelConfig(
+        model_name="OpenLLM-France/Luciole",
+        display_name="Luciole (FC)",
+        url="https://huggingface.co/OpenLLM-France/Luciole",
         org="OpenLLM-France",
         license="",
         model_handler=LucioleFCHandler,
