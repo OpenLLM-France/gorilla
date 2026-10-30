@@ -14,6 +14,8 @@ class LucioleFCHandler(QwenFCHandler):
     the exact shape the model was trained on.
     """
 
+    enable_thinking = True
+
     @override
     def _format_prompt(self, messages, function):
         tools = (
@@ -26,4 +28,11 @@ class LucioleFCHandler(QwenFCHandler):
             tools=tools,
             add_generation_prompt=True,
             tokenize=False,
+            enable_thinking=self.enable_thinking,
         )
+
+
+class LucioleFCNoThinkHandler(LucioleFCHandler):
+    """Same as LucioleFCHandler, with enable_thinking=False (empty <think></think> block)."""
+
+    enable_thinking = False
